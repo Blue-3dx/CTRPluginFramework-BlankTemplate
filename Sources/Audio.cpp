@@ -204,7 +204,7 @@ void AudioManager::CaptureAndEncode() {
 
     /* How many bytes have been written to the ring buffer since our last read? */
     u32 hwOffset = 0;
-    MICU_GetLastSampleOffset(&hwOffset);
+    micGetLastSampleOffset(&hwOffset);
 
     u32 available;
     if (hwOffset >= m_micReadOff) {
@@ -268,7 +268,8 @@ void AudioManager::DecodeIncoming(uint32_t userId, const uint8_t *opusData, size
                               0 /* no FEC */);
     if (samples <= 0) {
         /* Packet loss concealment */
-        opus_decode(dec, nullptr, 0, m_decodedBufs[slot], AUDIO_FRAME_SAMPLES, 1);
+        int plc = opus_decode(dec, nullptr, 0, m_decodedBufs[slot], AUDIO_FRAME_SAMPLES, 1);
+        (void)plc;
     }
 }
 
