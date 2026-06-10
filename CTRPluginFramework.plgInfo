@@ -1,29 +1,29 @@
-Author: Nanquitas
+Author: YourName
 
-Version: # Plugin version
-    Major: 0
-    Minor: 7
-    Revision: 2
+Version:
+    Major: 1
+    Minor: 0
+    Revision: 0
 
-Targets: # Low TitleId of games which are compatibles with this plugin (0 for all)
+Targets:  # 0 = works with any game
 
-Title: CTRPF - Blank Template
+Title: 3DS Voice Chat
 
-Summary: A CTRPF Plugin, with a lot of tools
+Summary: In-game voice chat over Wi-Fi using Opus
 
 Description: |
-  This plugin gives you access to a set of tools to edit your games
+  Voice chat plugin for 3DS.
 
   Features:
-    - Memory searcher
-    - Hex Editor
-    - Code creator
-    - Code import from file
-    - Action Replay engine with extra capabilities
-    - Super fast screenshot engine
+    - Opus-encoded voice over UDP (16 kHz, 20 ms frames)
+    - Up to 8 rooms, 5 users each
+    - Voice Activity Detection (auto mute when silent)
+    - On-screen overlay: talking users glow green
+    - Mute toggle
+    - Low memory footprint (~600 KB audio/codec state)
 
 Compatibility: Any
 
-MemorySize: 5MiB
+MemorySize: 10MiB
 
 UsePrivateMemory: false
