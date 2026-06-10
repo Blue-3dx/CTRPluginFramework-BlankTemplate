@@ -24,6 +24,7 @@ namespace VoicePlugin {
 
 #define AUDIO_MIC_RATE        16360    /* MICU_SAMPLE_RATE_16360 in Hz    */
 #define AUDIO_OPUS_RATE       16000    /* Opus encoder sample rate        */
+#define AUDIO_CHANNELS        1        /* mono voice                      */
 #define AUDIO_FRAME_SAMPLES   320      /* 20 ms @ 16 kHz                  */
 #define AUDIO_MIC_BUF_SIZE    (0x8000) /* 32 KB mic ring buffer           */
 #define AUDIO_NDSP_CHANNEL    23       /* NDSP channel (avoid game audio) */
