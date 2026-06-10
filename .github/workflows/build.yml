@@ -1,0 +1,103 @@
+name: Build VC3DS
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+# -----------------------------------------------------------------------
+# Job 1: 3DS plugin  (x86-64 runner + devkitPro Docker image)
+# -----------------------------------------------------------------------
+jobs:
+  build-plugin:
+    name: Build 3DS Plugin (.3gx)
+    runs-on: ubuntu-latest
+    container:
+      image: pablomk7/libctrpf:0.8.0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install libopus for 3DS via devkitPro's pacman.
+      # If dkp-pacman doesn't have 3ds-libopus, we fall back to building
+      # opus from source and installing it into the portlibs tree.
+      - name: Install 3ds-libopus
+        run: |
+          # Try dkp-pacman first (fast path)
+          dkp-pacman -Syu --noconfirm 3ds-libopus 2>/dev/null || true
+
+          # Check if it was installed
+          if [ ! -f "$DEVKITPRO/portlibs/3ds/lib/libopus.a" ]; then
+            echo "dkp-pacman did not install opus; building from source..."
+            apt-get update -q && apt-get install -y -q wget autoconf automake libtool
+
+            OPUS_VERSION=1.5.2
+            wget -q "https://downloads.xiph.org/releases/opus/opus-${OPUS_VERSION}.tar.gz"
+            tar xf "opus-${OPUS_VERSION}.tar.gz"
+            cd "opus-${OPUS_VERSION}"
+
+            ./configure \
+              --host=arm-none-eabi \
+              CC="${DEVKITARM}/bin/arm-none-eabi-gcc" \
+              AR="${DEVKITARM}/bin/arm-none-eabi-ar" \
+              RANLIB="${DEVKITARM}/bin/arm-none-eabi-ranlib" \
+              CFLAGS="-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -Os -DFIXED_POINT" \
+              --disable-shared \
+              --enable-static \
+              --enable-fixed-point \
+              --disable-extra-programs \
+              --disable-doc
+
+            make -j"$(nproc)"
+
+            mkdir -p "$DEVKITPRO/portlibs/3ds/lib"
+            cp .libs/libopus.a "$DEVKITPRO/portlibs/3ds/lib/"
+            mkdir -p "$DEVKITPRO/portlibs/3ds/include/opus"
+            cp include/*.h "$DEVKITPRO/portlibs/3ds/include/opus/"
+            echo "Opus built and installed successfully."
+          else
+            echo "3ds-libopus already available."
+          fi
+
+      - name: Build 3DS Plugin
+        run: make -j"$(nproc)"
+
+      - name: Upload .3gx artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vc3ds-plugin-3gx
+          path: "*.3gx"
+
+      - name: Upload .elf artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vc3ds-plugin-elf
+          path: "*.elf"
+
+# -----------------------------------------------------------------------
+# Job 2: Linux server  (native aarch64 runner — matches your server HW)
+# -----------------------------------------------------------------------
+  build-server:
+    name: Build Linux Server (aarch64)
+    runs-on: ubuntu-22.04-arm   # GitHub's native ARM64 runner
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q cmake build-essential
+
+      - name: Configure
+        run: cmake -S server -B server/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build server/build --parallel
+
+      - name: Upload server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: vc3ds-server-aarch64
+          path: server/build/vc3ds-server
